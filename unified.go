@@ -43,6 +43,12 @@ import (
 // written. driver.ErrBadConn is returned only when no command reached the
 // server, so the caller may safely retry on it. When rows is non-nil the
 // connection is busy until rows.Close.
+//
+// Unlike QueryContext, rows delivers every non-NULL cell as its MySQL wire
+// text: a []byte aliasing the connection's read buffer, valid only until the
+// next Next or Close call. Nothing is parsed into Go types (parseTime does
+// not apply), so values forward verbatim — zero dates, float representations,
+// and fractional-second padding survive untouched.
 func (mc *mysqlConn) QueryResultContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, driver.Result, error) {
 	if mc.closed.Load() {
 		return nil, nil, driver.ErrBadConn
@@ -117,6 +123,7 @@ func (mc *mysqlConn) queryResult(query string, args []driver.Value) (*textRows, 
 	// Columns
 	rows := new(textRows)
 	rows.mc = mc
+	rows.raw = true
 	rows.rs.columns, err = mc.readColumns(resLen, nil)
 	if err != nil {
 		return nil, nil, err
