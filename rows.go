@@ -25,6 +25,11 @@ type mysqlRows struct {
 	mc     *mysqlConn
 	rs     resultSet
 	finish func()
+	// raw delivers every non-NULL cell as its MySQL wire text ([]byte,
+	// aliasing the connection buffer) instead of parsing numeric and
+	// temporal columns into Go types. Set only on rows produced by
+	// QueryResultContext, which never pass through database/sql conversion.
+	raw bool
 }
 
 type binaryRows struct {
